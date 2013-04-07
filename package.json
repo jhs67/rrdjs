@@ -1,0 +1,17 @@
+{
+  "author": "Jon Spencer <jon@jonspencer.ca>",
+  "name": "rrdjs",
+  "description": "minimal node native bindings to the rrdtool libraries",
+  "version": "0.0.0",
+  "repository": {
+    "url": "git@jonspencer.ca:rrdjs"
+  },
+  "main": "index.js",
+  "engines": {
+    "node": ">=0.10"
+  },
+  "dependencies": {
+  },
+  "devDependencies": {
+  }
+}
