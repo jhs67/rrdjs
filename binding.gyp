@@ -3,6 +3,11 @@
     {
       "target_name": "rrdjs_bindings",
       "sources": [
+        "src/rrdjs.cc",
+        "src/rrdjs_info.cc",
+        "src/rrdjs_fetch.cc",
+        "src/rrdjs_create.cc",
+        "src/rrdjs_update.cc",
         "rrdtool/src/rrd_hw.c",
         "rrdtool/src/hash_32.c",
         "rrdtool/src/rrd_diff.c",

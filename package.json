@@ -13,5 +13,9 @@
   "dependencies": {
   },
   "devDependencies": {
+    "mocha": ">=1.9"
+  },
+  "scripts": {
+    "test": "./node_modules/.bin/mocha"
   }
 }
