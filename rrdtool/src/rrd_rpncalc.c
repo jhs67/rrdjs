@@ -821,10 +821,11 @@ short rpn_calc(
                 double    sum = 0;
 		double    sum2 = 0;
                 int       count = 0;
+                int       loop;
 		/* now loop for each position */
 		int doshifts=shifts;
 		if (shifts<0) { doshifts=-shifts; }
-		for(int loop=0;loop<doshifts;loop++) {
+		for(loop=0;loop<doshifts;loop++) {
 		    /* calculate shift step */
 		    int shiftstep=1;
 		    if (shifts<0) {
@@ -838,7 +839,8 @@ short rpn_calc(
 		    }
 		    shiftstep=(int)ceil((float)shiftstep/(float)dsstep);
 		    /* loop all local shifts */
-		    for(int i=0;i<=locstep;i++) {
+            int i;
+		    for(i=0;i<=locstep;i++) {
 			/* now calculate offset into data-array - relative to output_idx*/
 			int offset=shiftstep+i;
 			/* and process if we have index 0 of above */
