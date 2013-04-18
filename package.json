@@ -1,21 +1,24 @@
 {
-  "author": "Jon Spencer <jon@jonspencer.ca>",
   "name": "rrdjs",
   "description": "minimal node native bindings to the rrdtool libraries",
   "version": "0.0.0",
-  "repository": {
-    "url": "git@jonspencer.ca:rrdjs"
-  },
-  "main": "index.js",
-  "engines": {
-    "node": ">=0.10"
-  },
+  "author": "Jon Spencer <jon@jonspencer.ca>",
   "dependencies": {
   },
   "devDependencies": {
     "mocha": ">=1.9"
   },
+  "keyword": [
+    "rrd",
+    "rrdtool",
+    "timeseries"
+  ],
+  "repository": "git://github.com/jhs67/rrdjs.git",
+  "main": "index",
   "scripts": {
     "test": "./node_modules/.bin/mocha"
+  },
+  "engines": {
+    "node": ">=0.10"
   }
 }
