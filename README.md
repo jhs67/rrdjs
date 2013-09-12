@@ -27,7 +27,7 @@ function fetched(err, data) {
   if (err) throw err;
   console.log("Got some data", data);
 }
-````
+```
 
 ## API
 
