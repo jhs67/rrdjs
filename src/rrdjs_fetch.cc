@@ -75,6 +75,7 @@ namespace rrdjs {
 			b.callback->Call(Context::GetCurrent()->Global(), 2, res);
 		}
 
+		b.callback.Dispose();
 		delete &b;
 	}
 

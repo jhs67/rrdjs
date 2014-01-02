@@ -35,6 +35,7 @@ namespace rrdjs {
 		UpdateBoomerang &b = *static_cast<UpdateBoomerang*>(req->data);
 		Handle<Value> res[] = { b.status < 0 ? Exception::Error(String::New(b.error.c_str())) : Handle<Value>(Null()) };
 		b.callback->Call(Context::GetCurrent()->Global(), 1, res);
+		b.callback.Dispose();
 		delete &b;
 	}
 
