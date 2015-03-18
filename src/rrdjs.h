@@ -3,6 +3,7 @@
 
 #include <v8.h>
 #include <node.h>
+#include <nan.h>
 #include "../rrdtool/src/rrd.h"
 
 namespace rrdjs {
@@ -10,10 +11,10 @@ namespace rrdjs {
 	using namespace v8;
 	using namespace node;
 
-	Handle<Value> create(const Arguments &args);
-	Handle<Value> info(const Arguments &args);
-	Handle<Value> update(const Arguments &args);
-	Handle<Value> fetch(const Arguments &args);
+	NAN_METHOD(create);
+	NAN_METHOD(info);
+	NAN_METHOD(update);
+	NAN_METHOD(fetch);
 
 }
 

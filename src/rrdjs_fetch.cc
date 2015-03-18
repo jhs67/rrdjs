@@ -12,7 +12,7 @@ namespace rrdjs {
 	struct FetchBoomerang {
 		uv_work_t request;
 
-		Persistent<Function> callback;
+		NanCallback *callback;
 		string filename;
 		long unsigned step;
 		time_t start;
@@ -44,43 +44,43 @@ namespace rrdjs {
 	}
 
 	void fetchAfter(uv_work_t *req, int) {
-		HandleScope scope;
+		NanScope();
 		FetchBoomerang &b = *static_cast<FetchBoomerang*>(req->data);
 
 		if (b.status < 0) {
-			Handle<Value> res = Exception::Error(String::New(b.error.c_str()));
-			b.callback->Call(Context::GetCurrent()->Global(), 1, &res);
+			Handle<Value> res = Exception::Error(NanNew<String>(b.error.c_str()));
+			b.callback->Call(1, &res);
 		}
 		else {
 			Handle<Object> r = ObjectTemplate::New()->NewInstance();
 
-			Local<Array> s = Array::New(b.sourceCount);
+			Local<Array> s = NanNew<Array>(b.sourceCount);
 			for (unsigned long i = 0; i < b.sourceCount; ++i)
-				s->Set(i, String::New(b.sourceNames[i]));
+				s->Set(i, NanNew<String>(b.sourceNames[i]));
 
 			int valueCount = (b.end - b.start) / b.step;
-			Local<Array> v = Array::New(b.sourceCount * valueCount);
+			Local<Array> v = NanNew<Array>(b.sourceCount * valueCount);
 			for (unsigned long i = 0; i < b.sourceCount * valueCount; ++i)
-					v->Set(i, Number::New(b.values[i]));
+					v->Set(i, NanNew<Number>(b.values[i]));
 
-			r->Set(String::New("start"), Number::New(b.start));
-			r->Set(String::New("end"), Number::New(b.end));
-			r->Set(String::New("step"), Number::New(b.step));
-			r->Set(String::New("sources"), s);
-			r->Set(String::New("values"), v);
+			r->Set(NanNew<String>("start"), NanNew<Number>(b.start));
+			r->Set(NanNew<String>("end"), NanNew<Number>(b.end));
+			r->Set(NanNew<String>("step"), NanNew<Number>(b.step));
+			r->Set(NanNew<String>("sources"), s);
+			r->Set(NanNew<String>("values"), v);
 
 			Handle<Value> res[2];
-			res[0] = Null();
+			res[0] = NanNull();
 			res[1] = r;
-			b.callback->Call(Context::GetCurrent()->Global(), 2, res);
+			b.callback->Call(2, res);
 		}
 
-		b.callback.Dispose();
+		delete b.callback;
 		delete &b;
 	}
 
-	Handle<Value> fetch(const Arguments &args) {
-		HandleScope scope;
+	NAN_METHOD(fetch) {
+		NanScope();
 
 		FetchBoomerang &b = *new FetchBoomerang;
 		b.request.data = &b;
@@ -90,11 +90,11 @@ namespace rrdjs {
 		b.start = args[2]->Uint32Value();
 		b.end = args[3]->Uint32Value();
 		b.step = args[4]->Uint32Value();
-		b.callback = Persistent<Function>::New(Local<Function>::Cast(args[5]));
+		b.callback = new NanCallback(args[5].As<Function>());
 
 		uv_queue_work(uv_default_loop(), &b.request, fetchWorker, fetchAfter);
 
-		return Undefined();
+		NanReturnUndefined();
 	}
 
 }

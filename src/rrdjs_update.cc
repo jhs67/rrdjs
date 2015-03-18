@@ -14,7 +14,7 @@ namespace rrdjs {
 		string filename;
 		string templte;
 		vector<string> args;
-		Persistent<Function> callback;
+		NanCallback *callback;
 
 		int status;
 		string error;
@@ -31,16 +31,16 @@ namespace rrdjs {
 	}
 
 	void updateAfter(uv_work_t *req, int) {
-		HandleScope scope;
+		NanScope();
 		UpdateBoomerang &b = *static_cast<UpdateBoomerang*>(req->data);
-		Handle<Value> res[] = { b.status < 0 ? Exception::Error(String::New(b.error.c_str())) : Handle<Value>(Null()) };
-		b.callback->Call(Context::GetCurrent()->Global(), 1, res);
-		b.callback.Dispose();
+		Handle<Value> res[] = { b.status < 0 ? Exception::Error(NanNew<String>(b.error.c_str())) : Handle<Value>(NanNull()) };
+		b.callback->Call(1, res);
+		delete b.callback;
 		delete &b;
 	}
 
-	Handle<Value> update(const Arguments &args) {
-		HandleScope scope;
+	NAN_METHOD(update) {
+		NanScope();
 
 		UpdateBoomerang &b = *new UpdateBoomerang;
 		b.request.data = &b;
@@ -53,11 +53,11 @@ namespace rrdjs {
 		for (size_t i = 0; i < b.args.size(); ++i)
 			b.args[i] = *String::Utf8Value(aa->Get(i));
 
-		b.callback = Persistent<Function>::New(Local<Function>::Cast(args[3]));
+		b.callback = new NanCallback(args[3].As<Function>());
 
 		uv_queue_work(uv_default_loop(), &b.request, updateWorker, updateAfter);
 
-		return Undefined();
+		NanReturnUndefined();
 	}
 
 }

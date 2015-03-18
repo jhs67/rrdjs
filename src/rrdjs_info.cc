@@ -12,7 +12,7 @@ namespace rrdjs {
 		uv_work_t request;
 
 		string filename;
-		Persistent<Function> callback;
+		NanCallback *callback;
 
 		rrd_info_t *data;
 		string error;
@@ -27,64 +27,63 @@ namespace rrdjs {
 	}
 
 	Handle<Value> rrdInfoToObject(rrd_info_t *data) {
-		HandleScope scope;
 		Handle<Object> r = ObjectTemplate::New()->NewInstance();
 
 		while (data) {
-			Handle<String> key = String::New(data->key);
+			Handle<String> key = NanNew<String>(data->key);
 
 			switch (data->type) {
 				case RD_I_VAL:
-					r->Set(key, Number::New(data->value.u_val));
+					r->Set(key, NanNew<Number>(data->value.u_val));
 					break;
 				case RD_I_CNT:
-					r->Set(key, Number::New(data->value.u_cnt));
+					r->Set(key, NanNew<Number>(data->value.u_cnt));
 					break;
 				case RD_I_INT:
-					r->Set(key, Number::New(data->value.u_int));
+					r->Set(key, NanNew<Number>(data->value.u_int));
 					break;
 				case RD_I_STR:
-					r->Set(key, String::New(data->value.u_str));
+					r->Set(key, NanNew<String>(data->value.u_str));
 					break;
 				case RD_I_BLO: {
-					Buffer *b = Buffer::New(data->value.u_blo.size);
-					memcpy(node::Buffer::Data(b->handle_), (char*)data->value.u_blo.ptr, data->value.u_blo.size);
-					r->Set(key, b->handle_);
+					Local<Object> b = NanNewBufferHandle(data->value.u_blo.size);
+					memcpy(node::Buffer::Data(b), (char*)data->value.u_blo.ptr, data->value.u_blo.size);
+					r->Set(key, b);
 					break;
 				}
 			}
 			data = data->next;
 		}
 
-		return scope.Close(r);
+		return r;
 	}
 
 	void infoAfter(uv_work_t *req, int) {
-		HandleScope scope;
+		NanScope();
 		InfoBoomerang &b = *static_cast<InfoBoomerang*>(req->data);
 
 		Handle<Value> res[] = {
-			b.data == 0 ? Exception::Error(String::New(b.error.c_str())) : Handle<Value>(Null()),
-			b.data == 0 ? Handle<Value>(Null()) : rrdInfoToObject(b.data),
+			b.data == 0 ? Exception::Error(NanNew<String>(b.error.c_str())) : NanNew<Value>(NanNull()),
+			b.data == 0 ? NanNew<Value>(NanNull()) : rrdInfoToObject(b.data),
 		};
 
-		b.callback->Call(Context::GetCurrent()->Global(), b.data == 0 ? 1 : 2, res);
-		b.callback.Dispose();
+		b.callback->Call(b.data == 0 ? 1 : 2, res);
+		delete b.callback;
 		delete &b;
 	}
 
-	Handle<Value> info(const Arguments &args) {
-		HandleScope scope;
+	NAN_METHOD(info) {
+		NanScope();
 
 		InfoBoomerang &b = *new InfoBoomerang;
 		b.request.data = &b;
 
 		b.filename = *String::Utf8Value(args[0]->ToString());
-		b.callback = Persistent<Function>::New(Local<Function>::Cast(args[1]));
+		b.callback = new NanCallback(args[1].As<Function>());
 
 		uv_queue_work(uv_default_loop(), &b.request, infoWorker, infoAfter);
 
-		return Undefined();
+		NanReturnUndefined();
 	}
 
 }

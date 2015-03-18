@@ -15,7 +15,7 @@ namespace rrdjs {
 		uint32_t start;
 		string filename;
 		vector<string> args;
-		Persistent<Function> callback;
+		NanCallback *callback;
 
 		int status;
 		string error;
@@ -32,16 +32,16 @@ namespace rrdjs {
 	}
 
 	void createAfter(uv_work_t *req, int) {
-		HandleScope scope;
+		NanScope();
 		CreateBoomerang &b = *static_cast<CreateBoomerang*>(req->data);
-		Handle<Value> res[] = { b.status < 0 ? Exception::Error(String::New(b.error.c_str())) : Handle<Value>(Null()) };
-		b.callback->Call(Context::GetCurrent()->Global(), 1, res);
-		b.callback.Dispose();
+		Handle<Value> res[] = { b.status < 0 ? Exception::Error(NanNew<String>(b.error.c_str())) : Handle<Value>(NanNull()) };
+		b.callback->Call(1, res);
+		delete b.callback;
 		delete &b;
 	}
 
-	Handle<Value> create(const Arguments &args) {
-		HandleScope scope;
+	NAN_METHOD(create) {
+		NanScope();
 
 		CreateBoomerang &b = *new CreateBoomerang;
 		b.request.data = &b;
@@ -55,11 +55,11 @@ namespace rrdjs {
 		for (size_t i = 0; i < b.args.size(); ++i)
 			b.args[i] = *String::Utf8Value(aa->Get(i));
 
-		b.callback = Persistent<Function>::New(Local<Function>::Cast(args[4]));
+		b.callback = new NanCallback(args[4].As<Function>());
 
 		uv_queue_work(uv_default_loop(), &b.request, createWorker, createAfter);
 
-		return Undefined();
+		NanReturnUndefined();
 	}
 
 }
