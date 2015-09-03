@@ -45,4 +45,4 @@ Retreive data from the rrd file.
 
 ## License
 
-  MIT
+  ISC
