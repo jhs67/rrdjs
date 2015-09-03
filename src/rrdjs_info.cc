@@ -27,10 +27,10 @@ namespace rrdjs {
 	}
 
 	Handle<Value> rrdInfoToObject(rrd_info_t *data) {
-		Handle<Object> r = ObjectTemplate::New()->NewInstance();
+		Local<Object> r = ObjectTemplate::New()->NewInstance();
 
 		while (data) {
-			Handle<String> key = Nan::New<String>(data->key).ToLocalChecked();
+			Local<String> key = Nan::New<String>(data->key).ToLocalChecked();
 
 			switch (data->type) {
 				case RD_I_VAL:
@@ -62,7 +62,7 @@ namespace rrdjs {
 		Nan::HandleScope scope;
 		InfoBoomerang &b = *static_cast<InfoBoomerang*>(req->data);
 
-		Handle<Value> res[] = {
+		Local<Value> res[] = {
 			b.data == 0 ? Nan::Error(b.error.c_str()) : Local<Value>(Nan::Null()),
 			b.data == 0 ? Local<Value>(Nan::Null()) : rrdInfoToObject(b.data),
 		};

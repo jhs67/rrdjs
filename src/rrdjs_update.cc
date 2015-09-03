@@ -33,7 +33,7 @@ namespace rrdjs {
 	void updateAfter(uv_work_t *req, int) {
 		Nan::HandleScope scope;
 		UpdateBoomerang &b = *static_cast<UpdateBoomerang*>(req->data);
-		Handle<Value> res[] = { b.status < 0 ? Nan::Error(b.error.c_str()) : Handle<Value>(Nan::Null()) };
+		Local<Value> res[] = { b.status < 0 ? Nan::Error(b.error.c_str()) : Local<Value>(Nan::Null()) };
 		b.callback->Call(1, res);
 		delete b.callback;
 		delete &b;

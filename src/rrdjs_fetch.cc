@@ -49,11 +49,11 @@ namespace rrdjs {
 		FetchBoomerang &b = *static_cast<FetchBoomerang*>(req->data);
 
 		if (b.status < 0) {
-			Handle<Value> res = Nan::Error(b.error.c_str());
+			Local<Value> res = Nan::Error(b.error.c_str());
 			b.callback->Call(1, &res);
 		}
 		else {
-			Handle<Object> r = ObjectTemplate::New()->NewInstance();
+			Local<Object> r = ObjectTemplate::New()->NewInstance();
 
 			Local<Array> s = Nan::New<Array>(b.sourceCount);
 			for (unsigned long i = 0; i < b.sourceCount; ++i)
@@ -70,7 +70,7 @@ namespace rrdjs {
 			Nan::Set(r, Nan::New("sources").ToLocalChecked(), s);
 			Nan::Set(r, Nan::New("values").ToLocalChecked(), v);
 
-			Handle<Value> res[2];
+			Local<Value> res[2];
 			res[0] = Nan::Null();
 			res[1] = r;
 			b.callback->Call(2, res);
