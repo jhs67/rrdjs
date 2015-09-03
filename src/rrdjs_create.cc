@@ -15,7 +15,7 @@ namespace rrdjs {
 		uint32_t start;
 		string filename;
 		vector<string> args;
-		NanCallback *callback;
+		Nan::Callback *callback;
 
 		int status;
 		string error;
@@ -32,34 +32,30 @@ namespace rrdjs {
 	}
 
 	void createAfter(uv_work_t *req, int) {
-		NanScope();
+		Nan::HandleScope scope;
 		CreateBoomerang &b = *static_cast<CreateBoomerang*>(req->data);
-		Handle<Value> res[] = { b.status < 0 ? Exception::Error(NanNew<String>(b.error.c_str())) : Handle<Value>(NanNull()) };
+		Handle<Value> res[] = { b.status < 0 ? Nan::Error(b.error.c_str()) : Handle<Value>(Nan::Null()) };
 		b.callback->Call(1, res);
 		delete b.callback;
 		delete &b;
 	}
 
 	NAN_METHOD(create) {
-		NanScope();
-
 		CreateBoomerang &b = *new CreateBoomerang;
 		b.request.data = &b;
 
-		b.filename = *String::Utf8Value(args[0]->ToString());
-		b.step = args[1]->Uint32Value();
-		b.start = args[2]->Uint32Value();
+		b.filename = *String::Utf8Value(info[0]->ToString());
+		b.step = info[1]->Uint32Value();
+		b.start = info[2]->Uint32Value();
 
-		Local<Array> aa = Local<Array>::Cast(args[3]);
+		Local<Array> aa = Local<Array>::Cast(info[3]);
 		b.args.resize(aa->Length());
 		for (size_t i = 0; i < b.args.size(); ++i)
 			b.args[i] = *String::Utf8Value(aa->Get(i));
 
-		b.callback = new NanCallback(args[4].As<Function>());
+		b.callback = new Nan::Callback(info[4].As<Function>());
 
 		uv_queue_work(uv_default_loop(), &b.request, createWorker, createAfter);
-
-		NanReturnUndefined();
 	}
 
 }

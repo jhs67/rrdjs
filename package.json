@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "author": "Jon Spencer <jon@jonspencer.ca>",
   "dependencies": {
-    "nan": "^1.5.1"
+    "nan": "^2.0.5"
   },
   "devDependencies": {
     "mocha": ">=1.9"

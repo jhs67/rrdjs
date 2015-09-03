@@ -6,10 +6,10 @@ using namespace v8;
 extern "C" {
 
 	static void init(Handle<Object> target) {
-		target->Set(NanNew<String>("create"), NanNew<FunctionTemplate>(rrdjs::create)->GetFunction());
-		target->Set(NanNew<String>("info"), NanNew<FunctionTemplate>(rrdjs::info)->GetFunction());
-		target->Set(NanNew<String>("update"), NanNew<FunctionTemplate>(rrdjs::update)->GetFunction());
-		target->Set(NanNew<String>("fetch"), NanNew<FunctionTemplate>(rrdjs::fetch)->GetFunction());
+		Nan::SetMethod(target, "create", rrdjs::create);
+		Nan::SetMethod(target, "info", rrdjs::info);
+		Nan::SetMethod(target, "update", rrdjs::update);
+		Nan::SetMethod(target, "fetch", rrdjs::fetch);
 	}
 
 	NODE_MODULE(rrdjs_bindings, init)

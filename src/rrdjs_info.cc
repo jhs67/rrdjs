@@ -12,7 +12,7 @@ namespace rrdjs {
 		uv_work_t request;
 
 		string filename;
-		NanCallback *callback;
+		Nan::Callback *callback;
 
 		rrd_info_t *data;
 		string error;
@@ -30,23 +30,23 @@ namespace rrdjs {
 		Handle<Object> r = ObjectTemplate::New()->NewInstance();
 
 		while (data) {
-			Handle<String> key = NanNew<String>(data->key);
+			Handle<String> key = Nan::New<String>(data->key).ToLocalChecked();
 
 			switch (data->type) {
 				case RD_I_VAL:
-					r->Set(key, NanNew<Number>(data->value.u_val));
+					r->Set(key, Nan::New<Number>(data->value.u_val));
 					break;
 				case RD_I_CNT:
-					r->Set(key, NanNew<Number>(data->value.u_cnt));
+					r->Set(key, Nan::New<Number>(data->value.u_cnt));
 					break;
 				case RD_I_INT:
-					r->Set(key, NanNew<Number>(data->value.u_int));
+					r->Set(key, Nan::New<Number>(data->value.u_int));
 					break;
 				case RD_I_STR:
-					r->Set(key, NanNew<String>(data->value.u_str));
+					r->Set(key, Nan::New<String>(data->value.u_str).ToLocalChecked());
 					break;
 				case RD_I_BLO: {
-					Local<Object> b = NanNewBufferHandle(data->value.u_blo.size);
+					Local<Object> b = Nan::NewBuffer(data->value.u_blo.size).ToLocalChecked();
 					memcpy(node::Buffer::Data(b), (char*)data->value.u_blo.ptr, data->value.u_blo.size);
 					r->Set(key, b);
 					break;
@@ -59,12 +59,12 @@ namespace rrdjs {
 	}
 
 	void infoAfter(uv_work_t *req, int) {
-		NanScope();
+		Nan::HandleScope scope;
 		InfoBoomerang &b = *static_cast<InfoBoomerang*>(req->data);
 
 		Handle<Value> res[] = {
-			b.data == 0 ? Exception::Error(NanNew<String>(b.error.c_str())) : NanNew<Value>(NanNull()),
-			b.data == 0 ? NanNew<Value>(NanNull()) : rrdInfoToObject(b.data),
+			b.data == 0 ? Nan::Error(b.error.c_str()) : Local<Value>(Nan::Null()),
+			b.data == 0 ? Local<Value>(Nan::Null()) : rrdInfoToObject(b.data),
 		};
 
 		b.callback->Call(b.data == 0 ? 1 : 2, res);
@@ -73,17 +73,13 @@ namespace rrdjs {
 	}
 
 	NAN_METHOD(info) {
-		NanScope();
-
 		InfoBoomerang &b = *new InfoBoomerang;
 		b.request.data = &b;
 
-		b.filename = *String::Utf8Value(args[0]->ToString());
-		b.callback = new NanCallback(args[1].As<Function>());
+		b.filename = *String::Utf8Value(info[0]->ToString());
+		b.callback = new Nan::Callback(info[1].As<Function>());
 
 		uv_queue_work(uv_default_loop(), &b.request, infoWorker, infoAfter);
-
-		NanReturnUndefined();
 	}
 
 }

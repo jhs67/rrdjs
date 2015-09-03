@@ -12,7 +12,7 @@ namespace rrdjs {
 	struct FetchBoomerang {
 		uv_work_t request;
 
-		NanCallback *callback;
+		Nan::Callback *callback;
 		string filename;
 		long unsigned step;
 		time_t start;
@@ -44,33 +44,34 @@ namespace rrdjs {
 	}
 
 	void fetchAfter(uv_work_t *req, int) {
-		NanScope();
+		Nan::HandleScope scope;
+
 		FetchBoomerang &b = *static_cast<FetchBoomerang*>(req->data);
 
 		if (b.status < 0) {
-			Handle<Value> res = Exception::Error(NanNew<String>(b.error.c_str()));
+			Handle<Value> res = Nan::Error(b.error.c_str());
 			b.callback->Call(1, &res);
 		}
 		else {
 			Handle<Object> r = ObjectTemplate::New()->NewInstance();
 
-			Local<Array> s = NanNew<Array>(b.sourceCount);
+			Local<Array> s = Nan::New<Array>(b.sourceCount);
 			for (unsigned long i = 0; i < b.sourceCount; ++i)
-				s->Set(i, NanNew<String>(b.sourceNames[i]));
+				s->Set(i, Nan::New<String>(b.sourceNames[i]).ToLocalChecked());
 
 			int valueCount = (b.end - b.start) / b.step;
-			Local<Array> v = NanNew<Array>(b.sourceCount * valueCount);
+			Local<Array> v = Nan::New<Array>(b.sourceCount * valueCount);
 			for (unsigned long i = 0; i < b.sourceCount * valueCount; ++i)
-					v->Set(i, NanNew<Number>(b.values[i]));
+					v->Set(i, Nan::New<Number>(b.values[i]));
 
-			r->Set(NanNew<String>("start"), NanNew<Number>(b.start));
-			r->Set(NanNew<String>("end"), NanNew<Number>(b.end));
-			r->Set(NanNew<String>("step"), NanNew<Number>(b.step));
-			r->Set(NanNew<String>("sources"), s);
-			r->Set(NanNew<String>("values"), v);
+			Nan::Set(r, Nan::New("start").ToLocalChecked(), Nan::New<Number>(double(b.start)));
+			Nan::Set(r, Nan::New("end").ToLocalChecked(), Nan::New<Number>(double(b.end)));
+			Nan::Set(r, Nan::New("step").ToLocalChecked(), Nan::New<Number>(double(b.step)));
+			Nan::Set(r, Nan::New("sources").ToLocalChecked(), s);
+			Nan::Set(r, Nan::New("values").ToLocalChecked(), v);
 
 			Handle<Value> res[2];
-			res[0] = NanNull();
+			res[0] = Nan::Null();
 			res[1] = r;
 			b.callback->Call(2, res);
 		}
@@ -80,21 +81,17 @@ namespace rrdjs {
 	}
 
 	NAN_METHOD(fetch) {
-		NanScope();
-
 		FetchBoomerang &b = *new FetchBoomerang;
 		b.request.data = &b;
 
-		b.filename = *String::Utf8Value(args[0]->ToString());
-		b.cf = *String::Utf8Value(args[1]->ToString());
-		b.start = args[2]->Uint32Value();
-		b.end = args[3]->Uint32Value();
-		b.step = args[4]->Uint32Value();
-		b.callback = new NanCallback(args[5].As<Function>());
+		b.filename = *String::Utf8Value(info[0]->ToString());
+		b.cf = *String::Utf8Value(info[1]->ToString());
+		b.start = info[2]->Uint32Value();
+		b.end = info[3]->Uint32Value();
+		b.step = info[4]->Uint32Value();
+		b.callback = new Nan::Callback(info[5].As<Function>());
 
 		uv_queue_work(uv_default_loop(), &b.request, fetchWorker, fetchAfter);
-
-		NanReturnUndefined();
 	}
 
 }
