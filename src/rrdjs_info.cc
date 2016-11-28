@@ -64,7 +64,7 @@ namespace rrdjs {
 
 		Local<Value> res[] = {
 			b.data == 0 ? Nan::Error(b.error.c_str()) : Local<Value>(Nan::Null()),
-			b.data == 0 ? Local<Value>(Nan::Null()) : rrdInfoToObject(b.data),
+			b.data == 0 ? Local<Value>(Nan::Null()) : rrdInfoToObject(b.data)
 		};
 
 		b.callback->Call(b.data == 0 ? 1 : 2, res);
