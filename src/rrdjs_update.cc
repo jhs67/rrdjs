@@ -15,6 +15,7 @@ namespace rrdjs {
 		string templte;
 		vector<string> args;
 		Nan::Callback *callback;
+		Nan::AsyncResource *async;
 
 		int status;
 		string error;
@@ -34,7 +35,8 @@ namespace rrdjs {
 		Nan::HandleScope scope;
 		UpdateBoomerang &b = *static_cast<UpdateBoomerang*>(req->data);
 		Local<Value> res[] = { b.status < 0 ? Nan::Error(b.error.c_str()) : Local<Value>(Nan::Null()) };
-		b.callback->Call(1, res);
+		b.callback->Call(1, res, b.async);
+		delete b.async;
 		delete b.callback;
 		delete &b;
 	}
@@ -43,17 +45,18 @@ namespace rrdjs {
 		UpdateBoomerang &b = *new UpdateBoomerang;
 		b.request.data = &b;
 
-		b.filename = *String::Utf8Value(info[0]->ToString());
-		b.templte = *String::Utf8Value(info[1]->ToString());
+		b.filename = *Nan::Utf8String(info[0]);
+		b.templte = *Nan::Utf8String(info[1]);
 
 		Local<Array> aa = Local<Array>::Cast(info[2]);
 		b.args.resize(aa->Length());
 		for (size_t i = 0; i < b.args.size(); ++i)
-			b.args[i] = *String::Utf8Value(aa->Get(i));
+			b.args[i] = *Nan::Utf8String(Nan::Get(aa, i).ToLocalChecked());
 
 		b.callback = new Nan::Callback(info[3].As<Function>());
+		b.async = new Nan::AsyncResource("rrdjs:update");
 
-		uv_queue_work(uv_default_loop(), &b.request, updateWorker, updateAfter);
+		uv_queue_work(Nan::GetCurrentEventLoop(), &b.request, updateWorker, updateAfter);
 	}
 
 }

@@ -3,14 +3,11 @@
 
 using namespace v8;
 
-extern "C" {
-
-	static void init(Handle<Object> target) {
-		Nan::SetMethod(target, "create", rrdjs::create);
-		Nan::SetMethod(target, "info", rrdjs::info);
-		Nan::SetMethod(target, "update", rrdjs::update);
-		Nan::SetMethod(target, "fetch", rrdjs::fetch);
-	}
-
-	NODE_MODULE(rrdjs_bindings, init)
+NAN_MODULE_INIT(init) {
+	Nan::SetMethod(target, "create", rrdjs::create);
+	Nan::SetMethod(target, "info", rrdjs::info);
+	Nan::SetMethod(target, "update", rrdjs::update);
+	Nan::SetMethod(target, "fetch", rrdjs::fetch);
 }
+
+NAN_MODULE_WORKER_ENABLED(rrdjs_bindings, init)

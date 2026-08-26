@@ -13,6 +13,7 @@ namespace rrdjs {
 		uv_work_t request;
 
 		Nan::Callback *callback;
+		Nan::AsyncResource *async;
 		string filename;
 		long unsigned step;
 		time_t start;
@@ -50,19 +51,19 @@ namespace rrdjs {
 
 		if (b.status < 0) {
 			Local<Value> res = Nan::Error(b.error.c_str());
-			b.callback->Call(1, &res);
+			b.callback->Call(1, &res, b.async);
 		}
 		else {
-			Local<Object> r = ObjectTemplate::New()->NewInstance();
+			Local<Object> r = Nan::New<Object>();
 
 			Local<Array> s = Nan::New<Array>(b.sourceCount);
 			for (unsigned long i = 0; i < b.sourceCount; ++i)
-				s->Set(i, Nan::New<String>(b.sourceNames[i]).ToLocalChecked());
+				Nan::Set(s, i, Nan::New<String>(b.sourceNames[i]).ToLocalChecked());
 
-			int valueCount = (b.end - b.start) / b.step;
+			unsigned long valueCount = (b.end - b.start) / b.step;
 			Local<Array> v = Nan::New<Array>(b.sourceCount * valueCount);
 			for (unsigned long i = 0; i < b.sourceCount * valueCount; ++i)
-					v->Set(i, Nan::New<Number>(b.values[i]));
+					Nan::Set(v, i, Nan::New<Number>(b.values[i]));
 
 			Nan::Set(r, Nan::New("start").ToLocalChecked(), Nan::New<Number>(double(b.start)));
 			Nan::Set(r, Nan::New("end").ToLocalChecked(), Nan::New<Number>(double(b.end)));
@@ -73,9 +74,10 @@ namespace rrdjs {
 			Local<Value> res[2];
 			res[0] = Nan::Null();
 			res[1] = r;
-			b.callback->Call(2, res);
+			b.callback->Call(2, res, b.async);
 		}
 
+		delete b.async;
 		delete b.callback;
 		delete &b;
 	}
@@ -84,14 +86,15 @@ namespace rrdjs {
 		FetchBoomerang &b = *new FetchBoomerang;
 		b.request.data = &b;
 
-		b.filename = *String::Utf8Value(info[0]->ToString());
-		b.cf = *String::Utf8Value(info[1]->ToString());
-		b.start = info[2]->Uint32Value();
-		b.end = info[3]->Uint32Value();
-		b.step = info[4]->Uint32Value();
+		b.filename = *Nan::Utf8String(info[0]);
+		b.cf = *Nan::Utf8String(info[1]);
+		b.start = Nan::To<uint32_t>(info[2]).FromMaybe(0);
+		b.end = Nan::To<uint32_t>(info[3]).FromMaybe(0);
+		b.step = Nan::To<uint32_t>(info[4]).FromMaybe(0);
 		b.callback = new Nan::Callback(info[5].As<Function>());
+		b.async = new Nan::AsyncResource("rrdjs:fetch");
 
-		uv_queue_work(uv_default_loop(), &b.request, fetchWorker, fetchAfter);
+		uv_queue_work(Nan::GetCurrentEventLoop(), &b.request, fetchWorker, fetchAfter);
 	}
 
 }

@@ -13,6 +13,7 @@ namespace rrdjs {
 
 		string filename;
 		Nan::Callback *callback;
+		Nan::AsyncResource *async;
 
 		rrd_info_t *data;
 		string error;
@@ -26,29 +27,29 @@ namespace rrdjs {
 		rrd_clear_error();
 	}
 
-	Handle<Value> rrdInfoToObject(rrd_info_t *data) {
-		Local<Object> r = ObjectTemplate::New()->NewInstance();
+	Local<Value> rrdInfoToObject(rrd_info_t *data) {
+		Local<Object> r = Nan::New<Object>();
 
 		while (data) {
 			Local<String> key = Nan::New<String>(data->key).ToLocalChecked();
 
 			switch (data->type) {
 				case RD_I_VAL:
-					r->Set(key, Nan::New<Number>(data->value.u_val));
+					Nan::Set(r, key, Nan::New<Number>(data->value.u_val));
 					break;
 				case RD_I_CNT:
-					r->Set(key, Nan::New<Number>(data->value.u_cnt));
+					Nan::Set(r, key, Nan::New<Number>(data->value.u_cnt));
 					break;
 				case RD_I_INT:
-					r->Set(key, Nan::New<Number>(data->value.u_int));
+					Nan::Set(r, key, Nan::New<Number>(data->value.u_int));
 					break;
 				case RD_I_STR:
-					r->Set(key, Nan::New<String>(data->value.u_str).ToLocalChecked());
+					Nan::Set(r, key, Nan::New<String>(data->value.u_str).ToLocalChecked());
 					break;
 				case RD_I_BLO: {
 					Local<Object> b = Nan::NewBuffer(data->value.u_blo.size).ToLocalChecked();
 					memcpy(node::Buffer::Data(b), (char*)data->value.u_blo.ptr, data->value.u_blo.size);
-					r->Set(key, b);
+					Nan::Set(r, key, b);
 					break;
 				}
 			}
@@ -67,7 +68,8 @@ namespace rrdjs {
 			b.data == 0 ? Local<Value>(Nan::Null()) : rrdInfoToObject(b.data),
 		};
 
-		b.callback->Call(b.data == 0 ? 1 : 2, res);
+		b.callback->Call(b.data == 0 ? 1 : 2, res, b.async);
+		delete b.async;
 		delete b.callback;
 		delete &b;
 	}
@@ -76,10 +78,11 @@ namespace rrdjs {
 		InfoBoomerang &b = *new InfoBoomerang;
 		b.request.data = &b;
 
-		b.filename = *String::Utf8Value(info[0]->ToString());
+		b.filename = *Nan::Utf8String(info[0]);
 		b.callback = new Nan::Callback(info[1].As<Function>());
+		b.async = new Nan::AsyncResource("rrdjs:info");
 
-		uv_queue_work(uv_default_loop(), &b.request, infoWorker, infoAfter);
+		uv_queue_work(Nan::GetCurrentEventLoop(), &b.request, infoWorker, infoAfter);
 	}
 
 }
